@@ -7,40 +7,17 @@ import android.content.pm.ResolveInfo
 import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.annotation.RequiresApi
-import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
-import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
-import androidx.compose.material3.Card
-import androidx.compose.material3.CardDefaults
-import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.Icon
-import androidx.compose.material3.IconButton
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Scaffold
-import androidx.compose.material3.Text
-import androidx.compose.material3.TopAppBar
-import androidx.compose.runtime.Composable
-import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableIntStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
+import androidx.compose.material3.*
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
@@ -209,44 +186,15 @@ fun HomeContent(
                                 BitmapPainter(it)
                             }
                         }
-                        Box(
-                            modifier = Modifier
-                                .size(rowSizeDp)
-                        ) {
-                            Card(
-                                modifier = Modifier
-                                    .fillMaxSize()
-                                    .border(
-                                        width = rowSizeDp/8,
-                                        color = if (app == selectedApp) {
-                                            MaterialTheme.colorScheme.primary
-                                        } else {
-                                            MaterialTheme.colorScheme.primaryContainer
-                                        },
-                                        shape = RoundedCornerShape(rowSizeDp/6)
-                                    ),
-                                shape = RoundedCornerShape(rowSizeDp/6),
-                                colors = CardDefaults.cardColors(
-                                    containerColor = MaterialTheme.colorScheme.surfaceContainer
-                                ),
-                                onClick = { onClick(app) }
-                            ) {
-                                if (painter != null) {
-                                    Box(
-                                        modifier = Modifier.fillMaxSize(),
-                                        contentAlignment = Alignment.Center
-                                    ) {
-                                        Image(
-                                            painter = painter,
-                                            contentDescription = app.name,
-                                            modifier = Modifier
-                                                .size(rowSizeDp/2)
-                                                .fillMaxSize()
-                                        )
-                                    }
-                                }
+                        IconComponent(
+                            name = app.name,
+                            painter = painter,
+                            selected = selectedApp == app,
+                            dpSize = rowSizeDp,
+                            onClick = {
+                                onClick(app)
                             }
-                        }
+                        )
                     }
                 }
             }
