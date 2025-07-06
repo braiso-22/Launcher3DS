@@ -22,9 +22,7 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.painter.BitmapPainter
-import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.dp
 import androidx.core.graphics.drawable.toBitmap
@@ -152,33 +150,16 @@ fun HomeContent(
                         .weight(1f),
                 )
             } else {
-                var gridHeight by remember { mutableIntStateOf(360) }
-                val density = LocalDensity.current
                 val contentPadding = 8.dp
                 val verticalSpacing = 8.dp
 
-                val rowSizeDp = with(density) {
-                    val totalHeightDp = gridHeight.toDp()
-
-                    val topAndBottomPadding = contentPadding * 2
-                    val availableHeight = totalHeightDp - topAndBottomPadding
-
-                    val spacesBetweenRows = verticalSpacing * (rows - 1)
-                    val heightWithoutSpacing = availableHeight - spacesBetweenRows
-
-                    heightWithoutSpacing / rows
-                }
-
                 LazyHorizontalGrid(
                     modifier = Modifier
-                        .weight(1f)
-                        .onSizeChanged { size ->
-                            gridHeight = size.height
-                        },
+                        .weight(1f),
                     contentPadding = PaddingValues(contentPadding),
                     horizontalArrangement = Arrangement.spacedBy(8.dp),
                     verticalArrangement = Arrangement.spacedBy(verticalSpacing),
-                    rows = GridCells.FixedSize(rowSizeDp),
+                    rows = GridCells.Fixed(rows),
                 ) {
                     items(appList) { app ->
                         val painter = remember(app.icon) {
@@ -190,7 +171,6 @@ fun HomeContent(
                             name = app.name,
                             painter = painter,
                             selected = selectedApp == app,
-                            dpSize = rowSizeDp,
                             onClick = {
                                 onClick(app)
                             }

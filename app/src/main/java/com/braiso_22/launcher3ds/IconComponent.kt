@@ -2,20 +2,20 @@ package com.braiso_22.launcher3ds
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.border
-import androidx.compose.foundation.layout.Box
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.painter.Painter
+import androidx.compose.ui.layout.onSizeChanged
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -25,26 +25,33 @@ fun IconComponent(
     name: String,
     painter: Painter?,
     selected: Boolean,
-    dpSize: Dp,
     onClick: () -> Unit,
+    modifier: Modifier = Modifier,
 ) {
+    val itemHeight = remember { mutableIntStateOf(100) }
+    val density = LocalDensity.current
+    val itemWidth: Dp = with(density) {
+        itemHeight.intValue.toDp()
+    }
     Box(
-        modifier = Modifier
-            .size(dpSize)
+        modifier = modifier.width(itemWidth)
     ) {
         Card(
             modifier = Modifier
                 .fillMaxSize()
                 .border(
-                    width = dpSize / 8,
+                    width = 8.dp,
                     color = if (selected) {
                         MaterialTheme.colorScheme.primary
                     } else {
                         MaterialTheme.colorScheme.primaryContainer
                     },
-                    shape = RoundedCornerShape(dpSize / 6)
-                ),
-            shape = RoundedCornerShape(dpSize / 6),
+                    shape = RoundedCornerShape(25)
+                )
+                .onSizeChanged { size ->
+                    itemHeight.intValue = size.height
+                },
+            shape = RoundedCornerShape(25),
             colors = CardDefaults.cardColors(
                 containerColor = MaterialTheme.colorScheme.surfaceContainer
             ),
@@ -58,9 +65,7 @@ fun IconComponent(
                     Image(
                         painter = painter,
                         contentDescription = name,
-                        modifier = Modifier
-                            .size(dpSize / 2)
-                            .fillMaxSize()
+                        modifier = Modifier.fillMaxSize(1 / 2f)
                     )
                 }
             }
@@ -82,7 +87,6 @@ private fun IconComponentPreview() {
                     name = "Tia Jensen",
                     painter = null,
                     selected = false,
-                    dpSize = 150.dp,
                     onClick = {}
                 )
             }
