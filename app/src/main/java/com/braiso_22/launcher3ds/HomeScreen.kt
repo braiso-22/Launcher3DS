@@ -9,41 +9,52 @@ import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
-import androidx.compose.foundation.lazy.grid.GridCells
-import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
-import androidx.compose.foundation.lazy.grid.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
+import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
-import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 
-data class App(
-    val name: String,
-    val packageName: String,
-    val icon: Drawable?,
-) {
-    fun launch(context: Context) {
-        val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return
-        context.startActivity(intent)
+
+sealed interface Icon {
+    val name: String
+    val icon: Drawable?
+
+    data class App(
+        val packageName: String,
+        override val name: String,
+        override val icon: Drawable?,
+    ) : Icon {
+        fun launch(context: Context) {
+            val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return
+            context.startActivity(intent)
+        }
     }
+
+    data class Empty(
+        override val name: String,
+        override val icon: Drawable?,
+    ) : Icon
+
+    data class Folder(
+        override val name: String,
+        override val icon: Drawable?,
+    ) : Icon
 }
+
 
 @RequiresApi(Build.VERSION_CODES.TIRAMISU)
 @Composable
 fun HomeScreen() {
     val context = LocalContext.current
-    val apps = remember { mutableListOf<App>() }
-    var selectedApp by remember { mutableStateOf<App?>(null) }
+    val apps = remember { mutableListOf<Icon>() }
+    var selectedIcon by remember { mutableStateOf<Icon?>(null) }
     var loading by remember { mutableStateOf(true) }
     LaunchedEffect(Unit) {
         loading = true
@@ -55,61 +66,79 @@ fun HomeScreen() {
         val packageManager = context.packageManager
         val activities: List<ResolveInfo> = packageManager.queryIntentActivities(intent, flags)
         val newApps = activities.map { resolveInfo ->
-            App(
+            Icon.App(
                 name = resolveInfo.loadLabel(packageManager).toString(),
                 packageName = resolveInfo.activityInfo.packageName,
                 icon = resolveInfo.loadIcon(packageManager)
             )
         }
         if (newApps.isNotEmpty()) {
-            selectedApp = newApps.first()
+            selectedIcon = newApps.first()
         }
         apps.addAll(newApps)
         loading = false
     }
+
     var rows by rememberSaveable { mutableIntStateOf(2) }
     HomeContent(
-        loading = loading,
-        selectedApp = selectedApp,
-        appList = apps,
+        loadingIcons = loading,
+        selectedIcon = selectedIcon,
+        icons = apps,
         rows = rows,
         setRows = { newRows ->
-            if (newRows in 1..6) {
+            if (newRows in 1..7) {
                 rows = newRows
             }
         },
-        onClick = {
-            if (selectedApp == it) {
-                it.launch(context)
-            } else {
-                selectedApp = it
+        onClickItem = {
+            when (it) {
+                is Icon.App -> {
+                    if (selectedIcon == it) {
+                        it.launch(context)
+                    } else {
+                        selectedIcon = it
+                    }
+                }
+
+                is Icon.Empty -> TODO()
+                is Icon.Folder -> TODO()
             }
-        }
+
+        },
+        onClickSettings = {}
     )
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeContent(
-    loading: Boolean,
+    loadingIcons: Boolean,
     rows: Int,
-    selectedApp: App?,
-    appList: List<App>,
+    selectedIcon: Icon?,
+    icons: List<Icon>,
     setRows: (Int) -> Unit,
-    onClick: (App) -> Unit,
+    onClickItem: (Icon) -> Unit,
+    onClickSettings: () -> Unit,
 ) {
-
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Launcher 3DS") },
+                title = {},
+                navigationIcon = {
+                    IconButton(onClickSettings) {
+                        Icon(
+                            Icons.Default.Settings,
+                            "Navigate to settings"
+                        )
+                    }
+                },
                 actions = {
                     IconButton(onClick = {
                         setRows(rows - 1)
                     }) {
                         Icon(
                             Icons.Filled.KeyboardArrowDown,
-                            contentDescription = "Add rows"
+                            contentDescription = "Less rows"
                         )
                     }
                     IconButton(onClick = {
@@ -117,7 +146,7 @@ fun HomeContent(
                     }) {
                         Icon(
                             Icons.Filled.KeyboardArrowUp,
-                            contentDescription = "Add rows"
+                            contentDescription = "More rows"
                         )
                     }
                 }
@@ -125,7 +154,6 @@ fun HomeContent(
         },
         modifier = Modifier.fillMaxSize(),
     ) { innerPadding ->
-
         Column(Modifier.padding(innerPadding)) {
             Column(
                 modifier = Modifier
@@ -135,14 +163,9 @@ fun HomeContent(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                if (selectedApp == null) {
-                    Text("No selected app")
-                } else {
-                    Text(selectedApp.packageName)
-                    Text(selectedApp.name)
-                }
+                Text(text = selectedIcon?.name ?: "No selected app")
             }
-            if (loading) {
+            if (loadingIcons) {
                 Text(
                     "Loading apps",
                     modifier = Modifier
@@ -150,33 +173,13 @@ fun HomeContent(
                         .weight(1f),
                 )
             } else {
-                val contentPadding = 8.dp
-                val verticalSpacing = 8.dp
-
-                LazyHorizontalGrid(
-                    modifier = Modifier
-                        .weight(1f),
-                    contentPadding = PaddingValues(contentPadding),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(verticalSpacing),
-                    rows = GridCells.Fixed(rows),
-                ) {
-                    items(appList) { app ->
-                        val painter = remember(app.icon) {
-                            app.icon?.toBitmap()?.asImageBitmap()?.let {
-                                BitmapPainter(it)
-                            }
-                        }
-                        IconComponent(
-                            name = app.name,
-                            painter = painter,
-                            selected = selectedApp == app,
-                            onClick = {
-                                onClick(app)
-                            }
-                        )
-                    }
-                }
+                IconsGridComp(
+                    selectedApp = selectedIcon,
+                    apps = icons,
+                    rows = rows,
+                    onClickItem = onClickItem,
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     }
@@ -187,18 +190,19 @@ fun HomeContent(
 private fun HomeContentPreview() {
     MaterialTheme {
         HomeContent(
-            loading = false,
-            selectedApp = null,
-            appList = List(20) {
-                App(
+            loadingIcons = false,
+            selectedIcon = null,
+            icons = List(20) {
+                Icon.App(
                     name = "App $it",
                     packageName = "com.example.app$it",
-                    icon = null // Replace with a drawable resource if needed
+                    icon = null,
                 )
             },
             rows = 2,
             setRows = {},
-            onClick = {}
+            onClickItem = {},
+            onClickSettings = {}
         )
     }
 }
