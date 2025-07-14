@@ -4,11 +4,13 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.content.pm.ResolveInfo
-import android.graphics.drawable.Drawable
 import android.os.Build
 import androidx.annotation.RequiresApi
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.padding
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.KeyboardArrowUp
@@ -18,34 +20,22 @@ import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.PreviewLightDark
+import androidx.core.graphics.drawable.toBitmap
 
 
-sealed interface Icon {
-    val name: String
-    val icon: Drawable?
-
-    data class App(
-        val packageName: String,
-        override val name: String,
-        override val icon: Drawable?,
-    ) : Icon {
-        fun launch(context: Context) {
-            val intent = context.packageManager.getLaunchIntentForPackage(packageName) ?: return
-            context.startActivity(intent)
-        }
+data class Icon(
+    val id: String,
+    val name: String,
+    val icon: BitmapPainter?,
+) {
+    fun launch(context: Context) {
+        val intent = context.packageManager.getLaunchIntentForPackage(id) ?: return
+        context.startActivity(intent)
     }
-
-    data class Empty(
-        override val name: String,
-        override val icon: Drawable?,
-    ) : Icon
-
-    data class Folder(
-        override val name: String,
-        override val icon: Drawable?,
-    ) : Icon
 }
 
 
@@ -66,10 +56,12 @@ fun HomeScreen() {
         val packageManager = context.packageManager
         val activities: List<ResolveInfo> = packageManager.queryIntentActivities(intent, flags)
         val newApps = activities.map { resolveInfo ->
-            Icon.App(
+            val imageBitmap = resolveInfo.loadIcon(packageManager).toBitmap().asImageBitmap()
+            val icon = BitmapPainter(imageBitmap)
+            Icon(
                 name = resolveInfo.loadLabel(packageManager).toString(),
-                packageName = resolveInfo.activityInfo.packageName,
-                icon = resolveInfo.loadIcon(packageManager)
+                id = resolveInfo.activityInfo.packageName,
+                icon = icon,
             )
         }
         if (newApps.isNotEmpty()) {
@@ -91,19 +83,11 @@ fun HomeScreen() {
             }
         },
         onClickItem = {
-            when (it) {
-                is Icon.App -> {
-                    if (selectedIcon == it) {
-                        it.launch(context)
-                    } else {
-                        selectedIcon = it
-                    }
-                }
-
-                is Icon.Empty -> TODO()
-                is Icon.Folder -> TODO()
+            if (selectedIcon == it) {
+                it.launch(context)
+            } else {
+                selectedIcon = it
             }
-
         },
         onClickSettings = {}
     )
@@ -163,7 +147,10 @@ fun HomeContent(
                 verticalArrangement = Arrangement.Center,
                 horizontalAlignment = Alignment.CenterHorizontally
             ) {
-                Text(text = selectedIcon?.name ?: "No selected app")
+                Text(
+                    text = selectedIcon?.name ?: "No selected app",
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
             }
             if (loadingIcons) {
                 Text(
@@ -193,9 +180,9 @@ private fun HomeContentPreview() {
             loadingIcons = false,
             selectedIcon = null,
             icons = List(20) {
-                Icon.App(
+                Icon(
                     name = "App $it",
-                    packageName = "com.example.app$it",
+                    id = "com.example.app$it",
                     icon = null,
                 )
             },

@@ -1,10 +1,6 @@
 package com.braiso_22.launcher3ds
 
-import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Column
-import androidx.compose.foundation.layout.PaddingValues
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyHorizontalGrid
 import androidx.compose.foundation.lazy.grid.items
@@ -13,12 +9,9 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.asImageBitmap
-import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.tooling.preview.PreviewLightDark
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.graphics.drawable.toBitmap
 
 @Composable
 fun IconsGridComp(
@@ -38,19 +31,23 @@ fun IconsGridComp(
         verticalArrangement = Arrangement.spacedBy(verticalSpacing),
         rows = GridCells.Fixed(rows),
     ) {
-        items(apps) { app ->
-            val painter = remember(app.icon) {
-                app.icon?.toBitmap()?.asImageBitmap()?.let {
-                    BitmapPainter(it)
-                }
+        items(
+            apps,
+            key = { it.id }
+        ) { app ->
+
+            val isSelected = remember(selectedApp, app) {
+                selectedApp == app
+            }
+
+            val onClickCallback = remember(app, onClickItem) {
+                { onClickItem(app) }
             }
             IconComponent(
                 name = app.name,
-                painter = painter,
-                selected = selectedApp == app,
-                onClick = {
-                    onClickItem(app)
-                }
+                painter = app.icon,
+                selected = isSelected,
+                onClick = onClickCallback
             )
         }
     }
@@ -67,14 +64,14 @@ private fun IconsGridCompPreview() {
                     .fillMaxSize()
             ) {
                 IconsGridComp(
-                    selectedApp = Icon.App(
-                        name = "Lavern Cabrera1", packageName = "Tamara Trevino", icon = null
+                    selectedApp = Icon(
+                        name = "Lavern Cabrera1", id = "Tamara Trevino", icon = null
 
                     ),
                     apps = List(10) {
-                        Icon.App(
+                        Icon(
                             name = "Lavern Cabrera${it}",
-                            packageName = "Tamara Trevino",
+                            id = "Tamara Trevino${it}",
                             icon = null
 
                         )
